@@ -1,0 +1,13 @@
+/*全局样式表*/
+html, body, #app {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body, button, input, select, textarea {
+    font-family: PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+    line-height: 1.8;
+    font-weight: 400;
+}
+
