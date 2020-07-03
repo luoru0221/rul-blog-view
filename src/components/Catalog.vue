@@ -38,12 +38,39 @@
             }
         },
         created() {
-            console.log(this.$route);
-            if (this.$route.params.type === undefined) {
+            let type = this.$route.params.type;
+            if (type === undefined) {
                 this.axios.get("/article/getAllArticle")
                     .then(response => {
                         this.catalog = response.data;
                     }).catch(error => console.log(error));
+            } else {
+                this.axios.get("/article/getArticleByTag", {
+                    params: {
+                        "tagId": type
+                    }
+                }).then(response => {
+                    this.catalog = response.data;
+                }).catch(error => console.log(error));
+            }
+        },
+        watch: {
+            $route(to) {
+                let type = to.params.type;
+                if (type === undefined) {
+                    this.axios.get("/article/getAllArticle")
+                        .then(response => {
+                            this.catalog = response.data;
+                        }).catch(error => console.log(error));
+                } else {
+                    this.axios.get("/article/getArticleByTag", {
+                        params: {
+                            "tagId": type
+                        }
+                    }).then(response => {
+                        this.catalog = response.data;
+                    }).catch(error => console.log(error));
+                }
             }
         }
     }

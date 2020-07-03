@@ -8,6 +8,7 @@ import Management from "../components/Management";
 import Login from "../components/Login";
 import Customer from "../components/Customer";
 import User from "../components/User";
+import Editor from "../components/Editor";
 
 Vue.use(VueRouter);
 
@@ -41,15 +42,23 @@ const routes = [
             {
                 path: '/management',
                 component: Management,
-                redirect: '/management/login',
+                redirect: '/management/user',
                 children: [
                     {
                         path: 'login',
                         component: Login
                     },
                     {
-                        path:'user',
+                        path: 'user',
                         component: User
+                    },
+                    {
+                        path: 'editor/:articleId',
+                        component: Editor
+                    },
+                    {
+                        path: 'article/:articleId',
+                        component: Article
                     }
                 ]
             },
@@ -66,5 +75,24 @@ const router = new VueRouter({
     routes
 });
 
+/**
+ * 路由导航守卫
+ */
+router.beforeEach((to, from, next) => {
+    if (to.matched[1].path === '/management') {
+        if (to.path === '/management/login') {
+            //登录直接放行
+            return next();
+        } else if (sessionStorage.getItem("user") !== null) {
+            //已经登录，直接放行
+            return next();
+        } else {
+            //没有登录，导航到登录
+            return next("/management/login");
+        }
+    } else {
+        next();
+    }
+});
 
 export default router

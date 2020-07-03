@@ -7,7 +7,7 @@
             </div>
 
             <!-- 登录表单 :model绑定数据对象，:rules绑定验证规则对象，ref引用-->
-            <el-form label-width="0px" :model="loginForm" :rules="rules" ref="loginFormRef" class="login_form">
+            <el-form label-width="0px" :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login_form">
                 <!-- 用户名 prop属性用于指定对应的验证规则-->
                 <el-form-item prop="email">
                     <el-input placeholder="请输入登录邮箱" v-model="loginForm.email">
@@ -22,7 +22,7 @@
                 </el-form-item>
                 <!-- 按钮-->
                 <el-form-item class="btns">
-                    <el-button type="primary">登录</el-button>
+                    <el-button type="primary" @click="login">登录</el-button>
                     <el-button type="info">重置</el-button>
                     <el-button type="warning" @click="dialogFormVisible = true">注册</el-button>
                 </el-form-item>
@@ -45,15 +45,15 @@
                         </el-button>
                     </el-form-item>
                     <el-form-item label="密码" prop="password1" label-width="80px">
-                        <el-input v-model="registerForm.password1" autocomplete="off"></el-input>
+                        <el-input v-model="registerForm.password1" autocomplete="off" type="password"></el-input>
                     </el-form-item>
                     <el-form-item label="确认密码" prop="password2" label-width="80px">
-                        <el-input v-model="registerForm.password2" autocomplete="off"></el-input>
+                        <el-input v-model="registerForm.password2" autocomplete="off" type="password"></el-input>
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="dialogFormVisible = false">取 消</el-button>
-                    <el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
+                    <el-button type="primary" @click="register">确 定</el-button>
                 </div>
             </el-dialog>
 
@@ -79,16 +79,18 @@
                     disable: false,
                     buttonTxt: "获取验证码"
                 },
-                rules: {
+                loginRules: {
                     //表单验证规则
                     email: [
                         {required: true, message: '请输入邮箱', trigger: 'blur'},
-                        {pattern:/^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/,
-                            message: '请填写正确的邮箱',trigger: 'blur'}
+                        {
+                            pattern: /^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/,
+                            message: '请填写正确的邮箱', trigger: 'blur'
+                        }
                     ],
                     password: [
                         {required: true, message: '请输入密码', trigger: 'blur'},
-                        {min: 6, max: 10, message: '长度在 6 到 10 个字符', trigger: 'blur'}
+                        {min: 6, max: 16, message: '长度在 6 到 16 个字符', trigger: 'blur'}
                     ],
                 },
                 registerRules: {
@@ -98,8 +100,10 @@
                     ],
                     email: [
                         {required: true, message: '请输入邮箱', trigger: 'blur'},
-                        {pattern:/^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/,
-                            message: '请填写正确的邮箱',trigger: 'blur'}
+                        {
+                            pattern: /^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/,
+                            message: '请填写正确的邮箱', trigger: 'blur'
+                        }
                     ],
                     password1: [
                         {required: true, message: '请输入密码', trigger: 'blur'}
@@ -115,8 +119,77 @@
             }
         },
         methods: {
+            login() {
+                this.$refs['loginFormRef'].validate(valid => {
+                    if (!valid) {
+                        this.$message.error("请将信息填写完整");
+                        return;
+                    }
+                    let user = {
+                        "userEmail": this.loginForm.email,
+                        "userPassword": this.loginForm.password
+                    };
+                    this.axios.get("/user/login", {
+                        params: user
+                    }).then(response => {
+                        let result = response.data;
+                        if (result === "") {
+                            this.$message.error("密码错误");
+                        } else {
+                            let userJson = JSON.stringify(result);
+                            sessionStorage.setItem("user", userJson);
+                            this.$message.success("登录成功");
+                            this.$router.push("/management/user");
+                        }
+                    }).catch(error => console.log(error));
+                })
+            },
             getMessageCode() {
-                this.countDown();
+                this.$refs['registerFormRef'].validateField("email", errorMessage => {
+                    if (errorMessage) {
+                        this.$message.error("请正确填写邮箱");
+                    } else {
+                        let email = this.registerForm.email;
+                        this.axios.get("/user/sendVerifyCode", {
+                            params: {
+                                email
+                            }
+                        }).then(response => {
+                            let message = response.data.message;
+                            this.$message(message);
+                        }).catch(error => console.log(error));
+                        this.countDown();
+                    }
+                });
+            },
+            register() {
+                this.$refs['registerFormRef'].validate(valid => {
+                    if (!valid) {
+                        this.$message.error("请正确并完整填写信息");
+                        return;
+                    }
+                    if (this.registerForm.password1 !== this.registerForm.password2) {
+                        this.$message.error("两次密码不一致");
+                        return;
+                    }
+                    let user = {
+                        userName: this.registerForm.username,
+                        userEmail: this.registerForm.email,
+                        userPassword: this.registerForm.password2
+                    };
+                    let code = this.registerForm.code;
+                    this.axios.post("/user/register", {
+                        user,
+                        code
+                    }).then(response => {
+                        if (response.data === true) {
+                            this.$message.success("注册成功");
+                            this.dialogFormVisible = false;
+                        } else {
+                            this.$message.error("验证码错误");
+                        }
+                    }).catch(error => console.log(error));
+                })
             },
             countDown() {
                 let timeCount = 60;

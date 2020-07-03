@@ -17,11 +17,11 @@
                 </el-menu-item>
                 <el-menu-item index="/management">
                     <i class="rulfont rul-icon-gaojian-zuozhe"></i>
-                    <span slot="title">管理</span>
+                    <span slot="title">个人中心</span>
                 </el-menu-item>
                 <el-menu-item index="/about">
                     <i class="rulfont rul-icon-guanyu"></i>
-                    <span slot="title">关于我</span>
+                    <span slot="title">关于</span>
                 </el-menu-item>
             </el-menu>
         </el-aside>
